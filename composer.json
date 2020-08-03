@@ -1,0 +1,21 @@
+{
+  "name": "wuding/php-stat",
+  "description": "PHP Web Analytics",
+  "keywords": ["Statistics", "Analytics"],
+  "license": "BSD-3-Clause",
+  "authors": [
+    {
+      "name": "Benny Wu",
+      "email": "contact@urlnk.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Stat\\": "src/"
+    },
+    "files": ["src/Stat.php"]
+  },
+  "require": {
+    "php": ">=5.4.0"
+  }
+}
