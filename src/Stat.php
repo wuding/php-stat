@@ -1,5 +1,6 @@
 <?php
 
+use Ext\Url;
 use Ext\X\PhpRedis;
 use model\stat\VarServer;
 
@@ -65,9 +66,11 @@ class Stat
         $accept_encoding = $_SERVER['HTTP_ACCEPT_ENCODING'] ?? '<err>';
         $accept_language = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '<err>';
         $cookie = $_SERVER['HTTP_COOKIE'] ?? '<err>';
-        $log = json_encode([$addr, $float, $accept_encoding, md5($url) .','. md5($ua) .','. md5($accept) .','. md5($accept_language) .','. md5($cookie)]);
+        $referer = $_SERVER['HTTP_REFERER'] ?? null;
+        $log = json_encode([$addr, $float, $accept_encoding, md5($referer) .','. md5($url) .','. md5($ua) .','. md5($accept) .','. md5($accept_language) .','. md5($cookie)]);
 
         PhpRedis::conn('127.0.0.1', 6379, 0, null, 0, 0, ['auth' => 'redis3.2.100']);
+        $sadd_referer = PhpRedis::sAdd('stat_url', $referer);
         $sadd_url = PhpRedis::sAdd('stat_url', $url);
         $sadd_remote_addr = PhpRedis::sAdd('stat_remote_addr', $addr);
         $sadd_user_agent = PhpRedis::sAdd('stat_user_agent', $ua);
@@ -84,10 +87,11 @@ class Stat
     {
         new \Func\X\Crypto;
         new \Func\Variable;
-        $firstrun = $_GET['firstrun'] ?? null;
+        $disabled = $_GET['disabled'] ?? null;
         $time = time();
         $URL = \Func\request_url($_SERVER, true);
         parse_str($URL['query'] ?? null, $queryData);
+        $path = $URL['path'];
 
         // 键名
         $name = 'ENABLE_COOKIE_127_0_0_1';
@@ -99,11 +103,19 @@ class Stat
         $verify = \Func\X\separator_verify($key, $secret);
         if (null === $value || !$verify) {
             header("Set-Cookie: $key=$time");
-            if (null === $firstrun) {
-                $queryData['firstrun'] = $time;
-                $query = http_build_query($queryData);
-                header("Location: $path?$query");
+            if (null === $disabled) {
+                $queryData['disabled'] = 0;
+                $query = Url::buildQuery($queryData);
+                header("Location: $path$query");
+            } elseif ('0' === $disabled) { // 禁用了 Cookie
+                $queryData['disabled'] = 1;
+                $query = Url::buildQuery($queryData);
+                header("Location: $path$query");
             }
+        } elseif (null !== $disabled) { // 取消
+            unset($queryData['disabled']);
+            $query = Url::buildQuery($queryData);
+            header("Location: $path$query");
         }
         return $value;
     }
