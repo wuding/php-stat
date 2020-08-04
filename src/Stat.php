@@ -70,6 +70,7 @@ class Stat
         $log = json_encode([$addr, $float, $accept_encoding, md5($referer) .','. md5($url) .','. md5($ua) .','. md5($accept) .','. md5($accept_language) .','. md5($cookie)]);
 
         PhpRedis::conn('127.0.0.1', 6379, 0, null, 0, 0, ['auth' => 'redis3.2.100']);
+        $sadd_host = PhpRedis::sAdd('stat_host', $host);
         $sadd_referer = PhpRedis::sAdd('stat_url', $referer);
         $sadd_url = PhpRedis::sAdd('stat_url', $url);
         $sadd_remote_addr = PhpRedis::sAdd('stat_remote_addr', $addr);
