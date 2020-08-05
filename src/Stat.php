@@ -84,7 +84,7 @@ class Stat
     }
 
     // 检测 Cookie 启用情况
-    public static function cookie()
+    public static function cookie($redirect = true, $name = 'ENABLE_COOKIE_127_0_0_1')
     {
         new \Func\X\Crypto;
         new \Func\Variable;
@@ -95,7 +95,6 @@ class Stat
         $path = $URL['path'];
 
         // 键名
-        $name = 'ENABLE_COOKIE_127_0_0_1';
         $secret = 'test';
         $key = \Func\X\separator_encrypt($name, $secret);
 
@@ -104,16 +103,16 @@ class Stat
         $verify = \Func\X\separator_verify($key, $secret);
         if (null === $value || !$verify) {
             header("Set-Cookie: $key=$time");
-            if (null === $disabled) {
+            if (null === $disabled && $redirect) {
                 $queryData['disabled'] = 0;
                 $query = Url::buildQuery($queryData);
                 header("Location: $path$query");
-            } elseif ('0' === $disabled) { // 禁用了 Cookie
+            } elseif ('0' === $disabled && $redirect) { // 禁用了 Cookie
                 $queryData['disabled'] = 1;
                 $query = Url::buildQuery($queryData);
                 header("Location: $path$query");
             }
-        } elseif (null !== $disabled) { // 取消
+        } elseif (null !== $disabled && $redirect) { // 取消
             unset($queryData['disabled']);
             $query = Url::buildQuery($queryData);
             header("Location: $path$query");
