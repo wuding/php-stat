@@ -102,7 +102,8 @@ class Stat
         $value = $_COOKIE[$key] ?? null;
         $verify = \Func\X\separator_verify($key, $secret);
         if (null === $value || !$verify) {
-            header("Set-Cookie: $key=$time");
+            #header("Set-Cookie: $key=$time");
+            setcookie($key, $time, time() + 864000000, '/');
             if (null === $disabled && $redirect) {
                 $queryData['disabled'] = 0;
                 $query = Url::buildQuery($queryData);
