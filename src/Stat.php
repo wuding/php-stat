@@ -84,7 +84,7 @@ class Stat
     }
 
     // 检测 Cookie 启用情况
-    public static function cookie($redirect = true, $name = 'ENABLE_COOKIE_127_0_0_1')
+    public static function cookie($redirect = true, $name = 'ENABLE_COOKIE_127_0_0_1', $https = null)
     {
         new \Func\X\Crypto;
         new \Func\Variable;
@@ -95,6 +95,9 @@ class Stat
         $path = $URL['path'];
         $scheme = \Func\request_scheme();
         $secure = 'https' === $scheme ? true : false;
+        if (false === $https) {
+            $secure = false;
+        }
 
         // 键名
         $secret = 'test';
