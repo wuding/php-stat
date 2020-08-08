@@ -56,10 +56,12 @@ class Stat
     // 访问日志
     public static function record()
     {
+        new \Func\Variable;
+        $scheme = \Func\request_scheme();
         $float = $_SERVER['REQUEST_TIME_FLOAT'] ?? -0.1;
         $host = $_SERVER['HTTP_HOST'] ?? '<unknown>';
         $uri = $_SERVER['REQUEST_URI'] ?? '<err>';
-        $url = "http://$host$uri";
+        $url = "$scheme://$host$uri";
         $addr = $_SERVER['REMOTE_ADDR'] ?? '<err>';
         $ua = $_SERVER['HTTP_USER_AGENT'] ?? '<err>';
         $accept = $_SERVER['HTTP_ACCEPT'] ?? '<err>';
