@@ -93,6 +93,8 @@ class Stat
         $URL = \Func\request_url($_SERVER, true);
         parse_str($URL['query'] ?? null, $queryData);
         $path = $URL['path'];
+        $scheme = \Func\request_scheme();
+        $secure = 'https' === $scheme ? true : false;
 
         // 键名
         $secret = 'test';
@@ -103,7 +105,7 @@ class Stat
         $verify = \Func\X\separator_verify($key, $secret);
         if (null === $value || !$verify) {
             #header("Set-Cookie: $key=$time");
-            setcookie($key, $time, time() + 864000000, '/');
+            setcookie($key, $time, time() + 864000000, '/', '', $secure, true);
             if (null === $disabled && $redirect) {
                 $queryData['disabled'] = 0;
                 $query = Url::buildQuery($queryData);
