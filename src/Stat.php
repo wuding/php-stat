@@ -2,16 +2,20 @@
 
 use Ext\Url;
 use Ext\X\PhpRedis;
+use model\Glob;
 use model\stat\VarServer;
 
 class Stat
 {
+    const VERSION = 225.1350;
+    public static $unique = null;
+
     public function __constrcut()
     {
 
     }
 
-    // 记录 SERVER 变量
+    // 弃用：记录 SERVER 变量
     public static function server($vars = null)
     {
         $variable = $vars ?: $_SERVER;
@@ -53,6 +57,41 @@ class Stat
         return $arr;
     }
 
+    // 优化后记录 SERVER 变量
+    public static function srv($vars = null)
+    {
+        $arr = null === $vars ? $_SERVER : $vars;
+        $http_vary_string = 'HOST,USER_AGENT,ACCEPT,ACCEPT_ENCODING,ACCEPT_LANGUAGE,COOKIE,REFERER';
+        $server_var_string = 'REQUEST_TIME_FLOAT,REQUEST_URI,REMOTE_ADDR,REQUEST_TIME,PHP_SELF';
+        $session_var_str = 'SCRIPT_FILENAME,SERVER_NAME,HTTP_CONNECTION,HTTP_UPGRADE_INSECURE_REQUESTS,REQUEST_METHOD,SERVER_PORT,SERVER_SOFTWARE,SCRIPT_NAME,DOCUMENT_ROOT,HTTP_SEC_FETCH_MODE,HTTP_SEC_FETCH_SITE,PATH_INFO,HTTP_CACHE_CONTROL,HTTP_SEC_FETCH_USER,SERVER_PROTOCOL';
+        $http_vary = explode(',', $http_vary_string);
+        $server_var = explode(',', $server_var_string);
+        $session_var = explode(',', $session_var_str);
+        // 移除无用键
+        foreach ($http_vary as $k) {
+            $key = "HTTP_$k";
+            unset($arr[$key]);
+        }
+        foreach ($server_var as $key) {
+            unset($arr[$key]);
+        }
+        $result = [];
+        foreach ($arr as $key => $value) {
+            // 会话作为唯一
+            if (in_array($key, $session_var)) {
+                $json = json_encode([$value, 0, Glob::$sid]);
+                $k = PhpRedis::sAdd("stat_y_key", $key);
+                $r = PhpRedis::sAdd("STAT:$key", $json);
+            } else { // 请求唯一
+                $json = json_encode([$value, self::$unique]);
+                $k = PhpRedis::sAdd("stat_x_key", $key);
+                $r = PhpRedis::sAdd("statis_$key", $json);
+            }
+            $result[] = [$k, $r];
+        }
+        return $result;
+    }
+
     // 访问日志
     public static function record()
     {
@@ -69,7 +108,7 @@ class Stat
         $accept_language = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '<err>';
         $cookie = $_SERVER['HTTP_COOKIE'] ?? '<err>';
         $referer = $_SERVER['HTTP_REFERER'] ?? null;
-        $log = json_encode([$addr, $float, $accept_encoding, md5($referer) .','. md5($url) .','. md5($ua) .','. md5($accept) .','. md5($accept_language) .','. md5($cookie)]);
+        $log = json_encode([$addr, $float, $accept_encoding, md5($referer) .','. md5($url) .','. md5($ua) .','. md5($accept) .','. md5($accept_language) .','. md5($cookie) .','. self::$unique .','. Glob::$sid]);
 
         #PhpRedis::conn('127.0.0.1', 6379, 0, null, 0, 0, ['auth' => 'redis3.2.100']);
         $sadd_host = PhpRedis::sAdd('stat_host', $host);
@@ -86,11 +125,12 @@ class Stat
     }
 
     // 检测 Cookie 启用情况
-    public static function cookie($redirect = true, $name = 'ENABLE_COOKIE_127_0_0_1', $https = null)
+    public static function cookie($redirect = true, $name = 'ENABLE_COOKIE_127_0_0_1', $https = null, $sid = null)
     {
-        new \Func\X\Crypto;
+        $queryKey = 'sid';
+        #new \Func\X\Crypto;
         new \Func\Variable;
-        $disabled = $_GET['disabled'] ?? null;
+        $disabled = $_GET[$queryKey] ?? null;
         $time = time();
         $URL = \Func\request_url($_SERVER, true);
         parse_str($URL['query'] ?? null, $queryData);
@@ -102,29 +142,37 @@ class Stat
         }
 
         // 键名
-        $secret = 'test';
-        $key = \Func\X\separator_encrypt($name, $secret);
+        #$secret = 'test';
+        #$key = \Func\X\separator_encrypt($name, $secret);
+        $key = 'SID';
 
         // 获取并校验
         $value = $_COOKIE[$key] ?? null;
-        $verify = \Func\X\separator_verify($key, $secret);
-        if (null === $value || !$verify) {
-            #header("Set-Cookie: $key=$time");
-            setcookie($key, $time, time() + 864000000, '/', '', $secure, true);
-            if (null === $disabled && $redirect) {
-                $queryData['disabled'] = 0;
-                $query = Url::buildQuery($queryData);
-                header("Location: $path$query");
-            } elseif ('0' === $disabled && $redirect) { // 禁用了 Cookie
-                $queryData['disabled'] = 1;
-                $query = Url::buildQuery($queryData);
-                header("Location: $path$query");
+        #$verify = \Func\X\separator_verify($key, $secret);
+        if (null === $value) {
+            setcookie($key, $sid, time() + 864000000, '/', '', $secure, true);
+            if (null === $disabled) {
+                $queryData[$queryKey] = 0;
+                self::redirect($path, $queryData, $redirect);
+            } elseif ('0' === $disabled) { // 禁用了 Cookie
+                $queryData[$queryKey] = $sid;
+                self::redirect($path, $queryData, $redirect);
             }
-        } elseif (null !== $disabled && $redirect) { // 取消
-            unset($queryData['disabled']);
-            $query = Url::buildQuery($queryData);
-            header("Location: $path$query");
+        } elseif (null !== $disabled) { // Cookie 可用，取消 sid
+            unset($queryData[$queryKey]);
+            self::redirect($path, $queryData, $redirect);
         }
         return $value;
+    }
+
+    // 拼接路径和查询字符串后转向
+    public static function redirect($path, $queryData, $redirect = null)
+    {
+        if (!$redirect) {
+            return false;
+        }
+        $query = Url::buildQuery($queryData);
+        header("Location: $path$query");
+        print_r(array($path, $query, __FILE__, __LINE__));exit;
     }
 }
