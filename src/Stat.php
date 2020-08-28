@@ -61,19 +61,32 @@ class Stat
     public static function srv($vars = null)
     {
         $arr = null === $vars ? $_SERVER : $vars;
-        $http_vary_string = 'HOST,USER_AGENT,ACCEPT,ACCEPT_ENCODING,ACCEPT_LANGUAGE,COOKIE,REFERER';
-        $server_var_string = 'REQUEST_TIME_FLOAT,REQUEST_URI,REMOTE_ADDR,REQUEST_TIME,PHP_SELF';
-        $session_var_str = 'SCRIPT_FILENAME,SERVER_NAME,HTTP_CONNECTION,HTTP_UPGRADE_INSECURE_REQUESTS,REQUEST_METHOD,SERVER_PORT,SERVER_SOFTWARE,SCRIPT_NAME,DOCUMENT_ROOT,HTTP_SEC_FETCH_MODE,HTTP_SEC_FETCH_SITE,PATH_INFO,HTTP_CACHE_CONTROL,HTTP_SEC_FETCH_USER,SERVER_PROTOCOL';
-        $http_vary = explode(',', $http_vary_string);
-        $server_var = explode(',', $server_var_string);
+        $session_var_str = 'PHP_AUTH_USER,PHP_AUTH_PW';
+        $hvar = 'PATH_INFO,QUERY_STRING,DOCUMENT_ROOT,';
+        $hvar .= 'HTTP_=CONNECTION|CACHE_CONTROL|UPGRADE_INSECURE_REQUESTS|IF_MODIFIED_SINCE|PRAGMA|AUTHORIZATION|PURPOSE|';
+        $hvar .= 'HOST|USER_AGENT|ACCEPT|ACCEPT_ENCODING|ACCEPT_LANGUAGE|COOKIE|REFERER,';
+        $hvar .= 'HTTP_SEC_FETCH_=SITE|MODE|USER,';
+        $hvar .= 'SCRIPT_=NAME|FILENAME,';
+        $hvar .= 'REQUEST_=METHOD|TIME|TIME_FLOAT|URI,';
+        $hvar .= 'REMOTE_=ADDR|PORT,';
+        $hvar .= 'PHP_=SELF,';
+        $hvar .= 'SERVER_=PROTOCOL|NAME|PORT|SOFTWARE';
         $session_var = explode(',', $session_var_str);
+        $hvars = explode(',', $hvar);
         // 移除无用键
-        foreach ($http_vary as $k) {
-            $key = "HTTP_$k";
-            unset($arr[$key]);
-        }
-        foreach ($server_var as $key) {
-            unset($arr[$key]);
+        foreach ($hvars as $key) {
+            $sec = explode('=', $key);
+            $len = count($sec);
+            if (1 < $len) {
+                list($prefix, $names) = $sec;
+                $nm = explode('|', $names);
+                foreach ($nm as $v) {
+                    $keyname = "$prefix$v";
+                    unset($arr[$keyname]);
+                }
+            } else {
+                unset($arr[$key]);
+            }
         }
         $result = [];
         foreach ($arr as $key => $value) {
