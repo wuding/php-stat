@@ -62,15 +62,29 @@ class Stat
     {
         $arr = null === $vars ? $_SERVER : $vars;
         $session_var_str = 'PHP_AUTH_USER,PHP_AUTH_PW';
-        $hvar = 'PATH_INFO,QUERY_STRING,DOCUMENT_ROOT,';
-        $hvar .= 'HTTP_=CONNECTION|CACHE_CONTROL|UPGRADE_INSECURE_REQUESTS|IF_MODIFIED_SINCE|PRAGMA|AUTHORIZATION|PURPOSE|';
-        $hvar .= 'HOST|USER_AGENT|ACCEPT|ACCEPT_ENCODING|ACCEPT_LANGUAGE|COOKIE|REFERER,';
+        // bat 变量
+        $hvar = 'LOCALAPPDATA,TMP,SESSIONNAME,windir,FCGI_ROLE,APPDATA,PROMPT,FP_NO_HOST_CHECK,LOGONSERVER,OS,TEMP,PUBLIC,Path,NUMBER_OF_PROCESSORS,ComSpec,HOMEDRIVE,PATHEXT,COMPUTERNAME,CLIENTNAME,HOMEPATH,ALLUSERSPROFILE,PSModulePath,GATEWAY_INTERFACE,';
+        $hvar .= 'soft_dir,soft2_dir,php7_dir,';
+        // web 服务器
+        $hvar .= 'PATH_INFO,PATH_TRANSLATED,QUERY_STRING,REDIRECT_STATUS,';
+        # 前缀开始
+        // http
+        $hvar .= 'HTTP_=CONNECTION|CACHE_CONTROL|UPGRADE_INSECURE_REQUESTS|IF_MODIFIED_SINCE|PRAGMA|AUTHORIZATION|PURPOSE|HOST|USER_AGENT|ACCEPT|ACCEPT_ENCODING|ACCEPT_LANGUAGE|COOKIE|REFERER,';
         $hvar .= 'HTTP_SEC_FETCH_=SITE|MODE|USER,';
-        $hvar .= 'SCRIPT_=NAME|FILENAME,';
-        $hvar .= 'REQUEST_=METHOD|TIME|TIME_FLOAT|URI,';
+        $hvar .= 'REQUEST_=SCHEME|METHOD|TIME|TIME_FLOAT|URI,';
         $hvar .= 'REMOTE_=ADDR|PORT,';
+        // web 服务器
+        $hvar .= 'SERVER_=PROTOCOL|NAME|ADDR|PORT|SOFTWARE,';
+        $hvar .= 'SCRIPT_=NAME|FILENAME,';
         $hvar .= 'PHP_=SELF,';
-        $hvar .= 'SERVER_=PROTOCOL|NAME|PORT|SOFTWARE';
+        $hvar .= 'DOCUMENT_=ROOT|URI,';
+        $hvar .= 'CONTENT_=TYPE|LENGTH,';
+        // bat 变量
+        $hvar .= 'Common=ProgramFiles|ProgramFiles(x86)|ProgramW6432,';
+        $hvar .= 'System=Drive|Root,';
+        $hvar .= 'Program=Files|Files(x86)|Data|W6432,';
+        $hvar .= 'PROCESSOR_=ARCHITECTURE|IDENTIFIER|REVISION|LEVEL,';
+        $hvar .= 'USER=NAME|PROFILE|DOMAIN,';
         $session_var = explode(',', $session_var_str);
         $hvars = explode(',', $hvar);
         // 移除无用键
