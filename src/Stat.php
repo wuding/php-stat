@@ -152,7 +152,7 @@ class Stat
     }
 
     // 检测 Cookie 启用情况
-    public static function cookie($redirect = true, $name = 'ENABLE_COOKIE_127_0_0_1', $https = null, $sid = null)
+    public static function cookie($redirect = true, $name = 'ENABLE_COOKIE_127_0_0_1', $https = null, $sid = null, $set_cookie = false)
     {
         $queryKey = 'sid';
         #new \Func\X\Crypto;
@@ -177,14 +177,16 @@ class Stat
         $value = $_COOKIE[$key] ?? null;
         #$verify = \Func\X\separator_verify($key, $secret);
         if (null === $value) {
-            setcookie($key, $sid, time() + 864000000, '/', '', $secure, true);
-            if (null === $disabled) {
-                $queryData[$queryKey] = 0;
-                self::redirect($path, $queryData, $redirect);
-            } elseif ('0' === $disabled) { // 禁用了 Cookie
+            if ($set_cookie) {
+                setcookie($key, $sid, time() + 864000000, '/', '', $secure, true);
+            }
+
+            $valid = preg_match("/^[0-9a-z]{32}$/", $disabled);
+            if (!$valid) {
                 $queryData[$queryKey] = $sid;
                 self::redirect($path, $queryData, $redirect);
             }
+            return $disabled;
         } elseif (null !== $disabled) { // Cookie 可用，取消 sid
             unset($queryData[$queryKey]);
             self::redirect($path, $queryData, $redirect);
