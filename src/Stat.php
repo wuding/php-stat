@@ -152,12 +152,15 @@ class Stat
     }
 
     // 检测 Cookie 启用情况
-    public static function cookie($redirect = true, $name = 'ENABLE_COOKIE_127_0_0_1', $https = null, $sid = null, $set_cookie = false)
+    public static function cookie($redirect = true, $query = null, $https = null, $sid = null, $set_cookie = false)
     {
+        $allow = $query['allow'] ?? [];
+        $remove = $query['remove'] ?? [];
+        #$name = 'ENABLE_COOKIE_127_0_0_1'
         $queryKey = 'sid';
         #new \Func\X\Crypto;
         new \Func\Variable;
-        $disabled = $_GET[$queryKey] ?? null;
+        $sidg = $_GET[$queryKey] ?? null;
         $time = time();
         $URL = \Func\request_url($_SERVER, true);
         parse_str($URL['query'] ?? null, $queryData);
@@ -166,6 +169,13 @@ class Stat
         $secure = 'https' === $scheme ? true : false;
         if (false === $https) {
             $secure = false;
+        }
+
+        // 查询键名
+        if ($remove) {
+            foreach ($remove as $rm) {
+                unset($queryData[$rm]);
+            }
         }
 
         // 键名
@@ -181,13 +191,13 @@ class Stat
                 setcookie($key, $sid, time() + 864000000, '/', '', $secure, true);
             }
 
-            $valid = preg_match("/^[0-9a-z]{32}$/", $disabled);
+            $valid = preg_match("/^[0-9a-z]{32}$/", $sidg);
             if (!$valid) {
                 $queryData[$queryKey] = $sid;
                 self::redirect($path, $queryData, $redirect);
             }
-            return $disabled;
-        } elseif (null !== $disabled) { // Cookie 可用，取消 sid
+            return $sidg;
+        } elseif (null !== $sidg) { // Cookie 可用，取消 sid
             unset($queryData[$queryKey]);
             self::redirect($path, $queryData, $redirect);
         }
